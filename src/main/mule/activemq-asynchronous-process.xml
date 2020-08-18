@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="94399934-2a39-43fb-aa1f-87e054491501" basePath="/activemq" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="29dec1ea-78f7-4539-ac85-202b24683fd9" >
+		<jms:active-mq-connection username="admin" password="admin" >
+			<jms:factory-configuration brokerUrl="tcp://Durgaprasad:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<flow name="activemq-asynchronous-process-publish_Flow" doc:id="6a8499ef-228e-400a-9ce6-60d613acd2ce" >
+		<http:listener doc:name="Listener" doc:id="085a61c6-a509-4188-b180-63a30c895df7" config-ref="HTTP_Listener_config" path="/publish"/>
+		<logger level="INFO" doc:name="Logger" doc:id="5e37537b-77eb-4951-b623-3a2756c17592" message='#[%dw 2.0
+output application/json
+---
+{
+	"time-stamp": now() ,
+	"message": "Incoming payload",
+	"payload": payload
+}]'/>
+		<jms:publish doc:name="Publish" doc:id="5a62cdc5-0707-4925-8d77-d3a9e789a58c" config-ref="JMS_Config" destination="employee"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a41ba8d0-415b-4860-aa10-093b80066593" message='#[%dw 2.0
+output application/json
+---
+{
+	"time-stamp": now() ,
+	"message": "Message published successfully!!!",
+	"payload": payload
+}]'/>
+	</flow>
+	<flow name="activemq-asynchronous-process-consume_Flow" doc:id="8bcb9e3f-e57c-42d1-ad9a-33194369e124" >
+		<scheduler doc:name="Scheduler" doc:id="58026551-1efa-45b6-ad6b-a883ced06493" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="100000"/>
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="92abc5a9-fa10-4009-9546-2b08e0c39933" message='#[%dw 2.0
+output application/json
+---
+{
+	"time-stamp": now() ,
+	"message": "Started consuming from Quee!!!"
+}]'/>
+		<jms:consume doc:name="Consume" doc:id="dfc70de1-abfa-42a2-a86f-4e3248addf8c" config-ref="JMS_Config" destination="employee"/>
+		<logger level="INFO" doc:name="Logger" doc:id="2b1827b8-0b4c-458c-8067-f8e430b0c583" message='#[%dw 2.0
+output application/json
+---
+{
+	"time-stamp": now() ,
+	"message": "Message Consumed successfully!!!",
+	"payload": payload
+}]'/>
+	</flow>
+</mule>
